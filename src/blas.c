@@ -1,6 +1,22 @@
 #include "blas.h"
 #include "math.h"
 
+void shortcut_cpu(float *out, int w, int h, int c, int batch, int sample, float *add, int stride, int c2)
+{
+    int i,j,k,b;
+    for(b = 0; b < batch; ++b){
+        for(k = 0; k < c && k < c2; ++k){
+            for(j = 0; j < h/sample; ++j){
+                for(i = 0; i < w/sample; ++i){
+                    int out_index = i*sample + w*(j*sample + h*(k + c*b));
+                    int add_index = b*w*stride/sample*h*stride/sample*c2 + i*stride + w*stride/sample*(j*stride + h*stride/sample*k);
+                    out[out_index] += add[add_index];
+                }
+            }
+        }
+    }
+}
+
 void mean_cpu(float *x, int batch, int filters, int spatial, float *mean)
 {
     float scale = 1./(batch * spatial);
@@ -74,6 +90,12 @@ void scal_cpu(int N, float ALPHA, float *X, int INCX)
 {
     int i;
     for(i = 0; i < N; ++i) X[i*INCX] *= ALPHA;
+}
+
+void fill_cpu(int N, float ALPHA, float *X, int INCX)
+{
+    int i;
+    for(i = 0; i < N; ++i) X[i*INCX] = ALPHA;
 }
 
 void copy_cpu(int N, float *X, int INCX, float *Y, int INCY)
